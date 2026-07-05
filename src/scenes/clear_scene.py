@@ -11,6 +11,9 @@ class ClearScene(BaseScene):
     def on_enter(self):
         super().on_enter()
         self.score = self.kwargs.get("score", 0)
+        # 見出し・メッセージはゲームごとに差し替え可能（未指定なら DK 既定）
+        self.title_text = self.kwargs.get("title", "STAGE CLEAR!")
+        self.message = self.kwargs.get("message", "YOU RESCUED PAULINE!")
         self.font_title = pygame.font.Font(None, 84)
         self.font_text = pygame.font.Font(None, 44)
         self.font_small = pygame.font.Font(None, 32)
@@ -28,10 +31,10 @@ class ClearScene(BaseScene):
         cx = SCREEN_WIDTH // 2
 
         bob = int(math.sin(self.time * 4) * 6)
-        title = self.font_title.render("STAGE CLEAR!", True, COLOR_GREEN)
+        title = self.font_title.render(self.title_text, True, COLOR_GREEN)
         screen.blit(title, title.get_rect(center=(cx, 180 + bob)))
 
-        msg = self.font_text.render("YOU RESCUED PAULINE!", True, COLOR_YELLOW)
+        msg = self.font_text.render(self.message, True, COLOR_YELLOW)
         screen.blit(msg, msg.get_rect(center=(cx, 270)))
 
         score = self.font_text.render(f"SCORE  {self.score:06d}", True, COLOR_WHITE)

@@ -9,6 +9,7 @@ import pygame
 from scenes.base_scene import BaseScene
 from game_objects.tetris_board import Board
 from game_objects.tetromino import Tetromino, KINDS, COLORS
+from utils.synth_audio import SoundBank
 from config import (
     SCREEN_WIDTH, SCREEN_HEIGHT, COLOR_BLACK, COLOR_WHITE, COLOR_GRAY,
     TETRIS_COLS, TETRIS_ROWS, TETRIS_CELL, TETRIS_BOARD_X, TETRIS_BOARD_Y,
@@ -23,6 +24,9 @@ SPAWN_Y = 0
 # ライン消去得点（消去数 -> 基本点）。いずれも × level
 LINE_SCORES = {1: 100, 2: 300, 3: 500, 4: 1000}
 
+# 下キー長押し時のソフトドロップ間隔（秒）。押しっぱなしでこの間隔で落下。
+SOFT_DROP_INTERVAL = 0.05
+
 
 class TetrisScene(BaseScene):
     def on_enter(self):
@@ -32,6 +36,7 @@ class TetrisScene(BaseScene):
         self.font_small = pygame.font.Font(None, 30)
         self.font_label = pygame.font.Font(None, 26)
         self.font_hint = pygame.font.Font(None, 22)
+        self.sound = SoundBank()
         self._reset_game()
 
     def _reset_game(self):
@@ -42,6 +47,7 @@ class TetrisScene(BaseScene):
         self.level = 1
         self.fall_timer = 0.0
         self.fall_interval = self._calc_fall_interval()
+        self.soft_drop_timer = 0.0
         self.time = 0.0
         self.next_kind = random.choice(KINDS)
         self.current = None
@@ -58,6 +64,7 @@ class TetrisScene(BaseScene):
         self.current = Tetromino(kind, SPAWN_X, SPAWN_Y)
         if not self.board.is_valid(self.current.cells()):
             self.state = "over"
+            self.sound.play_se("death")
 
     # --- 入力 -----------------------------------------------------------
     def handle_input(self, event):
@@ -69,18 +76,28 @@ class TetrisScene(BaseScene):
                 self._reset_game()
             return
 
+        # 初代ゲームボーイ準拠の操作:
+        #   十字キー ←→ で移動、↓ でソフトドロップ（押しっぱなしは update で継続）
+        #   A ボタン(X) で右回転、B ボタン(Z) で左回転
+        #   ↑ は使わない／ハードドロップは無し
         if event.key == pygame.K_LEFT:
-            self._try_move(-1, 0)
+            if self._try_move(-1, 0):
+                self.sound.play_se("move")
         elif event.key == pygame.K_RIGHT:
-            self._try_move(1, 0)
+            if self._try_move(1, 0):
+                self.sound.play_se("move")
         elif event.key == pygame.K_DOWN:
+            # 押した瞬間に1マス落として即応させる。以降の継続は update が担当。
             if self._try_move(0, 1):
                 self.score += 1  # ソフトドロップ加点
                 self.fall_timer = 0.0
-        elif event.key in (pygame.K_UP, pygame.K_x, pygame.K_z):
-            self._try_rotate()
-        elif event.key == pygame.K_SPACE:
-            self._hard_drop()
+                self.soft_drop_timer = 0.0
+        elif event.key == pygame.K_x:
+            if self._try_rotate(1):   # A ボタン: 右回転
+                self.sound.play_se("rotate")
+        elif event.key == pygame.K_z:
+            if self._try_rotate(-1):  # B ボタン: 左回転
+                self.sound.play_se("rotate")
 
     def _try_move(self, dx, dy):
         piece = self.current
@@ -91,9 +108,9 @@ class TetrisScene(BaseScene):
             return True
         return False
 
-    def _try_rotate(self):
+    def _try_rotate(self, direction=1):
         piece = self.current
-        new_rot = piece.next_rotation()
+        new_rot = piece.next_rotation(direction)
         # 簡易壁蹴り: その場 → 右1 → 左1 → 右2 → 左2 の順で試す
         for dx in (0, 1, -1, 2, -2):
             cells = piece.cells(rotation=new_rot, x=piece.x + dx)
@@ -103,20 +120,25 @@ class TetrisScene(BaseScene):
                 return True
         return False
 
-    def _hard_drop(self):
-        piece = self.current
-        dropped = 0
-        while self.board.is_valid(piece.cells(y=piece.y + 1)):
-            piece.y += 1
-            dropped += 1
-        self.score += dropped * 2  # ハードドロップ加点
-        self._lock_and_next()
-
     # --- 更新 -----------------------------------------------------------
     def update(self, dt):
         self.time += dt
         if self.state != "play":
             return
+
+        # ソフトドロップ：下キーを押している間、一定間隔で落下し続ける
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_DOWN]:
+            self.soft_drop_timer += dt
+            while self.soft_drop_timer >= SOFT_DROP_INTERVAL:
+                self.soft_drop_timer -= SOFT_DROP_INTERVAL
+                if self._try_move(0, 1):
+                    self.score += 1        # ソフトドロップ加点
+                    self.fall_timer = 0.0  # 通常落下と二重に落ちないようリセット
+                else:
+                    break
+        else:
+            self.soft_drop_timer = 0.0
 
         self.fall_timer += dt
         if self.fall_timer >= self.fall_interval:
@@ -127,13 +149,20 @@ class TetrisScene(BaseScene):
     def _lock_and_next(self):
         piece = self.current
         self.board.lock(piece.cells(), piece.kind)
+        self.sound.play_se("lock")
         cleared = self.board.clear_lines()
         if cleared:
             self.score += LINE_SCORES.get(cleared, 0) * self.level
             self.lines += cleared
+            prev_level = self.level
             self.level = self.lines // 10 + 1
             self.fall_interval = self._calc_fall_interval()
+            if self.level > prev_level:
+                self.sound.play_se("levelup")
+            else:
+                self.sound.play_se("line")
         self.fall_timer = 0.0
+        self.soft_drop_timer = 0.0
         self._spawn_piece()
 
     # --- 描画 -----------------------------------------------------------
@@ -212,15 +241,17 @@ class TetrisScene(BaseScene):
             screen.blit(v, (px, hud_y + 24))
             hud_y += 76
 
-        # 操作ヒント
+        # 操作ヒント（初代ゲームボーイ準拠）
         controls = [
-            "LEFT/RIGHT: MOVE",
-            "UP: ROTATE",
-            "DOWN: SOFT DROP",
-            "SPACE: HARD DROP",
-            "ESC: MENU",
+            "<- -> : MOVE",
+            "v (HOLD): DROP",
+            "X : ROTATE (A)",
+            "Z : ROTATE (B)",
+            "ESC : MENU",
         ]
         cy = SCREEN_HEIGHT - 18 - len(controls) * 22
+        title = self.font_label.render("CONTROLS", True, COLOR_WHITE)
+        screen.blit(title, (px, cy - 26))
         for line in controls:
             t = self.font_hint.render(line, True, COLOR_GRAY)
             screen.blit(t, (px, cy))

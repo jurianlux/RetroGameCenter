@@ -91,6 +91,6 @@ class Tetromino:
         rot %= len(SHAPES[self.kind])
         return [(ox + cx, oy + cy) for (cx, cy) in SHAPES[self.kind][rot]]
 
-    def next_rotation(self):
-        """右回転後の状態インデックス。"""
-        return (self.rotation + 1) % len(SHAPES[self.kind])
+    def next_rotation(self, direction=1):
+        """回転後の状態インデックス。direction=1 で右回転、-1 で左回転。"""
+        return (self.rotation + direction) % len(SHAPES[self.kind])

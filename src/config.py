@@ -109,3 +109,64 @@ DK81_COLOR_FLAME = (255, 140, 30)         # 炎（オレンジ）
 DK81_COLOR_FLAME_CORE = (255, 220, 80)    # 炎の芯（黄）
 DK81_COLOR_SKIN = (245, 200, 150)         # 肌色
 DK81_COLOR_HAMMER = (200, 160, 60)        # ハンマー（Milestone B）
+
+# ==========================================================================
+# アイスクライマー（ICE）設定 — 本作専用。ICE_ 接頭辞で既存定数と衝突を避ける
+# ==========================================================================
+
+# セル・ステージ寸法
+ICE_CELL = 32                  # 氷ブロック 1 マスの辺（px）
+ICE_COLS = 25                  # 山の横幅（セル数, 25*32=800）
+ICE_FLOOR_GAP = 3              # 段と段の垂直間隔（セル数）
+ICE_FLOORS = 8                 # 氷の床の段数（1 ステージ）
+ICE_GROUND_Y = 560             # 最下段の床「上面」の画面 y（開始時の見え）
+
+# プレイヤー（ポポ）
+ICE_PLAYER_W = 26
+ICE_PLAYER_H = 30
+ICE_PLAYER_SPEED = 155         # pixels/sec（左右移動）
+# ジャンプは「1 段（ICE_FLOOR_GAP セル=96px）を越えて上段に乗れる」高さが必要。
+# 到達高 ≒ v^2/(2g)。v=560, g=1350 で ≒116px（96px+余裕）。
+ICE_JUMP_POWER = 560           # pixels/sec（ジャンプ初速）
+ICE_GRAVITY = 1350             # pixels/sec^2（落下加速度・やや重め）
+ICE_AIR_CONTROL = 0.9          # 空中での左右操作の効き（0〜1）
+ICE_RESPAWN_INVINCIBLE = 1.6   # 復帰後の無敵時間（秒）
+ICE_DEATH_TIME = 1.4           # やられ演出の時間（秒）
+
+# スコア・ライフ
+ICE_START_LIVES = 3
+ICE_ICE_BREAK_SCORE = 10       # 氷ブロックを 1 個割った得点
+ICE_TOPI_SCORE = 300           # トッピー撃破の得点
+ICE_ICICLE_DODGE = 0           # （つらら回避は加点なし）
+ICE_SUMMIT_TIME = 12.0         # 山頂ボーナスの制限時間（秒）
+ICE_CONDOR_BONUS = 3000        # コンドルを掴んだ時のボーナス
+
+# 敵（トッピー）
+ICE_TOPI_SPEED = 55            # pixels/sec（床を歩く速度）
+ICE_TOPI_SPAWN_INTERVAL = 3.4  # 生成間隔（秒）
+ICE_TOPI_MAX = 3               # 同時出現の上限
+ICE_TOPI_REPAIR_TIME = 1.1     # 穴を 1 マス塞ぐのにかける時間（秒）
+
+# つらら
+ICE_ICICLE_SPAWN_INTERVAL = 2.8   # 生成間隔（秒）
+ICE_ICICLE_FALL = 360             # pixels/sec（落下速度）
+ICE_ICICLE_WARN = 0.7             # 落下前の予兆（震え）時間（秒）
+
+# 色（ICE 専用）
+ICE_COLOR_SKY_TOP = (30, 40, 90)      # 空グラデ上
+ICE_COLOR_SKY_BOT = (70, 120, 190)    # 空グラデ下
+ICE_COLOR_SUMMIT_SKY = (18, 24, 60)   # 山頂の夜空
+ICE_COLOR_ICE = (170, 220, 245)       # 氷ブロック（水色）
+ICE_COLOR_ICE_HI = (225, 245, 255)    # 氷ハイライト
+ICE_COLOR_ICE_DARK = (110, 165, 205)  # 氷の陰
+ICE_COLOR_GROUND = (120, 140, 165)    # 割れない土台の岩
+ICE_COLOR_GROUND_HI = (160, 180, 205)
+ICE_COLOR_POPO = (40, 90, 220)        # ポポの服（青）
+ICE_COLOR_POPO_TRIM = (245, 245, 255) # ポポの縁取り（白）
+ICE_COLOR_POPO_FACE = (250, 215, 170) # 顔
+ICE_COLOR_HAMMER_HEAD = (210, 175, 70)   # ハンマー頭（金）
+ICE_COLOR_TOPI = (240, 240, 250)      # トッピー（白）
+ICE_COLOR_TOPI_DARK = (180, 185, 205)
+ICE_COLOR_ICICLE = (200, 235, 250)    # つらら
+ICE_COLOR_CONDOR = (60, 55, 70)       # コンドル（黒紫）
+ICE_COLOR_CLOUD = (235, 240, 250)     # 山頂の雲足場
